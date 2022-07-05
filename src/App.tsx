@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Scene, PointLayer, GaodeMapV2 } from "@antv/l7";
 import { useInterval, useMount } from "ahooks";
-import { Slider, Card } from "antd";
+import { Slider, Card, Button } from "antd";
 import "antd/dist/antd.css";
 import "./App.css";
+import { PauseOutlined, CaretRightOutlined } from "@ant-design/icons";
+import moment from "moment";
 
 export default function App() {
   const [data, setData] = useState<any>([]);
   const [time, setTime] = useState(0);
   const [pointLayer, setPointLayer] = useState<PointLayer | null>(null);
+  const [interval1, setInterval1] = useState<number | null>(null);
   useMount(async () => {
     const scene = new Scene({
       id: "map",
@@ -78,11 +81,25 @@ export default function App() {
     });
   }, [data, time, pointLayer]);
 
-  useInterval(() => {
-    setTime((oldTime) => {
-      return oldTime >= 47 ? 0 : oldTime + 1;
-    });
-  }, 100);
+  const startTime = useCallback(() => {
+    if (typeof interval1 === "number") {
+      return;
+    }
+    setInterval1(
+      setInterval(() => {
+        setTime((time) => {
+          return time >= 47 ? 0 : time + 1;
+        });
+      }, 100)
+    );
+  }, []);
+
+  const stopTime = () => {
+    if (typeof interval1 === "number") {
+      clearInterval(interval1);
+      setInterval1(null);
+    }
+  };
 
   return (
     <div className="App">
@@ -96,9 +113,49 @@ export default function App() {
           left: `calc(50% - 150px)`,
           zIndex: 10,
           background: "#fff",
+          textAlign: "center",
         }}
       >
-        <Slider value={time} min={0} max={47} step={1} onChange={setTime} />
+        <Button
+          shape="circle"
+          icon={
+            typeof interval1 === "number" ? (
+              <PauseOutlined />
+            ) : (
+              <CaretRightOutlined />
+            )
+          }
+          onClick={() => {
+            if (typeof interval1 === "number") {
+              stopTime();
+            } else {
+              startTime();
+            }
+          }}
+        ></Button>
+        <Slider
+          value={time}
+          min={0}
+          max={47}
+          step={1}
+          tipFormatter={(value) => {
+            console.log(
+              moment()
+                .startOf("day")
+                .add((value ?? 0) * 30 * 60 * 1000)
+                .format("HH:mm")
+            );
+
+            return moment()
+              .startOf("day")
+              .add((value ?? 0) * 30 * 60 * 1000)
+              .format("HH:mm");
+          }}
+          onChange={(newTime) => {
+            setTime(newTime);
+            stopTime();
+          }}
+        />
       </Card>
     </div>
   );

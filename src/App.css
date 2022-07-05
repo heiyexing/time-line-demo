@@ -1,0 +1,10 @@
+.App {
+  height: 100vh;
+  overflow: hidden;
+}
+
+html,
+body {
+  margin: 0;
+  overflow: hidden;
+}
